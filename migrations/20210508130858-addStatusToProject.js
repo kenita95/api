@@ -1,15 +1,11 @@
-'use strict';
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('Invoice_details', 'serialNumber', {
-      type: Sequelize.INTEGER,
-      references: {
-        model: 'Stocks',
-        key: 'id',
-      },
-      
-    })
+    await queryInterface.addColumn("project_labels", "status", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: true,
+    });
   },
 
   down: async (queryInterface, Sequelize) => {
@@ -19,5 +15,5 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-  }
+  },
 };

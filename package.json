@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "eslint \"./src/**/*.js\" app.js  --fix",
     "start": "nodemon server.js",
+    "test": "nodemon export NODE_ENV=test server.js",
     "prod": "pm2 start ecosystem.config.js"
   },
   "author": "pathum kalhan",

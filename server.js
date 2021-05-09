@@ -7,5 +7,5 @@ const server = http.createServer(app);
 
 // server.listen(port);
 server.listen(port, () => {
-  console.log(`PORT ${port} ${process.env.NODE_ENV} ${process.env.JWT_KEY}`);
+  console.log(`PORT ${port} ${process.env.NODE_ENV}`);
 });
