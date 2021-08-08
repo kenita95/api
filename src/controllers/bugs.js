@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../models");
+const checkAuth = require("../middleware/checkAuth");
 
 const router = express.Router();
 
@@ -30,9 +31,10 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", checkAuth, async (req, res) => {
   try {
-    const data = await db.bug.findAll({
+    const role = req.user.role;
+    const filter = {
       include: [
         {
           model: db.User,
@@ -46,10 +48,16 @@ router.get("/", async (req, res) => {
         },
         {
           model: db.project,
-        
         },
       ],
-    });
+    };
+    if (role === 'dev') {
+      filter.include[1].where = {
+        id: req.user.userId,
+      };
+      
+    }
+    const data = await db.bug.findAll(filter);
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json(error);
