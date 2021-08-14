@@ -8,6 +8,36 @@ router.post("/", checkAuth, async (req, res) => {
   const transaction = await db.sequelize.transaction();
 
   try {
+    let colorCode;
+    switch (req.body.labelType) {
+      case "Security":
+        colorCode = "red";
+        break;
+      case "Feature":
+        colorCode = "blue";
+        break;
+      case "Maintenance":
+        colorCode = "orange";
+
+        break;
+
+      case "Think / Check":
+        colorCode = "teal";
+        break;
+      case "Design":
+        colorCode = "purple";
+        break;
+      case "Visuals":
+        colorCode = "Visuals";
+        break;
+      case "Infrastructure":
+        colorCode = "Infrastructure";
+        break;
+
+      default:
+        break;
+    }
+    req.body.colorCode = colorCode;
     const item = await db.project_label.create(req.body, { transaction });
 
     // ADD AUDIT
@@ -81,6 +111,36 @@ router.put("/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
+    let colorCode;
+    switch (req.body.labelType) {
+      case "Security":
+        colorCode = "red";
+        break;
+      case "Feature":
+        colorCode = "blue";
+        break;
+      case "Maintenance":
+        colorCode = "orange";
+
+        break;
+
+      case "Think / Check":
+        colorCode = "teal";
+        break;
+      case "Design":
+        colorCode = "purple";
+        break;
+      case "Visuals":
+        colorCode = "green";
+        break;
+      case "Infrastructure":
+        colorCode = "pink";
+        break;
+
+      default:
+        break;
+    }
+    req.body.colorCode = colorCode;
     await db.project_label.update(data, {
       where: {
         id,
