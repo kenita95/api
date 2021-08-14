@@ -51,16 +51,72 @@ router.get("/", checkAuth, async (req, res) => {
         },
       ],
     };
-    if (role === 'dev') {
+    if (role === "dev") {
       filter.include[1].where = {
         id: req.user.userId,
       };
-      
     }
     const data = await db.bug.findAll(filter);
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json(error);
+  }
+});
+
+router.get("/:id", checkAuth, async (req, res) => {
+  try {
+    const role = req.user.role;
+    const filter = {
+      where:{
+        id:req.params.id
+      },
+      include: [
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["title", "first_name", "last_name", "fullName"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["title", "first_name", "last_name", "fullName"],
+        },
+        {
+          model: db.project,
+        },
+      ],
+    };
+    // if (role === 'dev') {
+    //   filter.include[1].where = {
+    //     id: req.user.userId,
+    //   };
+
+    // }
+    const data = await db.bug.findOne(filter);
+    console.log("data",data)
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  try {
+    const data = await db.bug.update(req.body, {
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    await transaction.commit();
+    console.log("REQ.BODY", data);
+    res.sendStatus(200);
+  } catch (error) {
+    await transaction.rollback();
+    console.log(error);
+
+    res.sendStatus(500);
   }
 });
 
