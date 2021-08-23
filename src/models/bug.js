@@ -1,4 +1,5 @@
 "use strict";
+const moment = require("moment");
 const { Model } = require("sequelize");
 module.exports = (sequelize, Sequelize) => {
   class bug extends Model {
@@ -87,6 +88,23 @@ module.exports = (sequelize, Sequelize) => {
       fileUrl: {
         type: Sequelize.STRING,
       },
+      createdDate: {
+        type: Sequelize.VIRTUAL,
+        get() {
+          return moment(this.getDataValue("createdAt")).format(
+            "YYYY-MM-DD hh:mm:ss A"
+          );
+        },
+      },
+      updatedDate: {
+        type: Sequelize.VIRTUAL,
+        get() {
+          return moment(this.getDataValue("updatedAt")).format(
+            "YYYY-MM-DD hh:mm:ss A"
+          );
+        },
+      },
+      title: { type: Sequelize.STRING },
     },
     {
       sequelize,
