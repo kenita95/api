@@ -111,7 +111,7 @@ router.post('/login', async (req, res) => {
     },
     process.env.JWT_KEY);
 
-    const name = `${isValidUser.title ? 'Mr. ' : 'Ms. '} ${isValidUser.first_name} ${isValidUser.last_name}`;
+    const name = `${isValidUser.first_name} ${isValidUser.last_name}`;
 
     return res.status(200).json({
       token,
