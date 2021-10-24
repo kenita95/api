@@ -31,51 +31,55 @@ router.post("/bugStatus", async (req, res) => {
       ],
       // logging:console.log
     });
-    console.log(data)
+    console.log(data);
     res.status(200).json(data);
   } catch (error) {
-    console.log(error);
     res.sendStatus(500);
   }
 });
 
-router.post("/subcategory", async (req, res) => {
+router.post("/devProgress", async (req, res) => {
   try {
-    const s = req.body.status;
+    const { startDate, endDate, devsList, bugStatus, environment, severity,componentType } =
+      req.body;
 
-    const { isLimitByRange } = req.body;
-
-    const { from } = req.body;
-    const { to } = req.body;
-
-    const preparedQuery = {
+    const query = {
       where: {
-        parentId: {
-          [Op.ne]: null,
-        },
+        createdAt: { [Op.between]: [startDate, endDate] },
+
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
       },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
     };
-    preparedQuery.where = {};
-    if (s == 1) {
-      preparedQuery.where.status = 1;
-    }
-    if (s == 0) {
-      preparedQuery.where.status = 0;
+
+    if (componentType === "developer") {
+      query.where.assignedTo = { [Op.in]: devsList };
+    } else {
+      query.where.assignee = { [Op.in]: devsList };
+
     }
 
-    if (isLimitByRange) {
-      preparedQuery.where.createdAt = {};
-      preparedQuery.where.createdAt.$between = [];
-      preparedQuery.where.createdAt.$between.push(from);
-      preparedQuery.where.createdAt.$between.push(to);
-    }
-
-    const data = await db.category.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      masterData: req.body,
-    });
+    const data = await db.bug.findAll(query);
+    res.status(200).json(data);
   } catch (error) {
+    console.log(error);
     res.sendStatus(500);
   }
 });
