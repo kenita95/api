@@ -1,44 +1,45 @@
-const moment = require('moment');
-const express = require('express');
-const db = require('../models');
+const moment = require("moment");
+const express = require("express");
+const db = require("../models");
 
 const router = express.Router();
 const { Op } = db.Sequelize;
 
-router.post('/category', async (req, res) => {
+router.post("/bugStatus", async (req, res) => {
   try {
-    // total number of categories
-    const s = req.body.status;
-
-    const { from, to, isLimitByRange } = req.body;
-
-    const preparedQuery = {};
-    preparedQuery.where = {};
-    if (String(s) === 'Inactive') {
-      preparedQuery.where.status = 0;
-    }
-    if (String(s) === 'Active') {
-      preparedQuery.where.status = 1;
-    }
-
-    if (isLimitByRange) {
-      preparedQuery.where.createdAt = {};
-      preparedQuery.where.createdAt.$between = [];
-      preparedQuery.where.createdAt.$between.push(from);
-      preparedQuery.where.createdAt.$between.push(to);
-    }
-
-    const data = await db.category.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      masterData: req.body,
+    const { startDate, endDate, bugStatus } = req.body;
+    const data = await db.bug.findAll({
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+        status: { [Op.in]: bugStatus },
+      },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+      // logging:console.log
     });
+    console.log(data)
+    res.status(200).json(data);
   } catch (error) {
+    console.log(error);
     res.sendStatus(500);
   }
 });
 
-router.post('/subcategory', async (req, res) => {
+router.post("/subcategory", async (req, res) => {
   try {
     const s = req.body.status;
 
@@ -79,7 +80,7 @@ router.post('/subcategory', async (req, res) => {
   }
 });
 
-router.post('/product', async (req, res) => {
+router.post("/product", async (req, res) => {
   try {
     const s = req.body.status;
 
@@ -114,15 +115,13 @@ router.post('/product', async (req, res) => {
   }
 });
 
-router.get('/stock', async (req, res) => {
+router.get("/stock", async (req, res) => {
   try {
     const query = `SELECT 
     items.name,
-    SUM(Stocks.qty) AS qty,
-    categories.name AS category
-FROM
-    inventory.Stocks
-        INNER JOIN
+    SUM(Stocks {
+      model: db.customer,
+    },JOIN
     items ON Stocks.item_id = items.id
         INNER JOIN
     categories ON items.categoryId = categories.id
@@ -140,7 +139,7 @@ GROUP BY Stocks.item_id`;
   }
 });
 
-router.post('/customer', async (req, res) => {
+router.post("/customer", async (req, res) => {
   try {
     const s = req.body.status;
     const meta = req.body;
@@ -168,7 +167,7 @@ router.post('/customer', async (req, res) => {
   }
 });
 
-router.post('/user', async (req, res) => {
+router.post("/user", async (req, res) => {
   try {
     const { order, type, s } = req.body;
 
@@ -192,12 +191,12 @@ router.post('/user', async (req, res) => {
       meta,
     });
   } catch (error) {
-    console.log('ERR', error);
+    console.log("ERR", error);
     res.sendStatus(500);
   }
 });
 
-router.post('/sr', async (req, res) => {
+router.post("/sr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -235,7 +234,7 @@ router.post('/sr', async (req, res) => {
   }
 });
 
-router.post('/invoice', async (req, res) => {
+router.post("/invoice", async (req, res) => {
   try {
     const data = req.body;
 
@@ -268,7 +267,7 @@ router.post('/invoice', async (req, res) => {
   }
 });
 
-router.post('/pr', async (req, res) => {
+router.post("/pr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -306,7 +305,7 @@ router.post('/pr', async (req, res) => {
   }
 });
 
-router.post('/grn', async (req, res) => {
+router.post("/grn", async (req, res) => {
   try {
     const data = req.body;
 
@@ -344,7 +343,7 @@ async function todayTransactions(req, res, next) {
     const today_grn = await db.Grn_master.findAll({
       where: {
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
         //  db.Sequelize.fn('CURRENT_DATE')
       },
@@ -359,7 +358,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -373,7 +372,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -392,7 +391,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
