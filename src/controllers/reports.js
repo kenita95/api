@@ -1,138 +1,88 @@
-const moment = require('moment');
-const express = require('express');
-const db = require('../models');
+const moment = require("moment");
+const express = require("express");
+const db = require("../models");
 
 const router = express.Router();
 const { Op } = db.Sequelize;
 
-router.post('/category', async (req, res) => {
+router.post("/bugStatus", async (req, res) => {
   try {
-    // total number of categories
-    const s = req.body.status;
-
-    const { from, to, isLimitByRange } = req.body;
-
-    const preparedQuery = {};
-    preparedQuery.where = {};
-    if (String(s) === 'Inactive') {
-      preparedQuery.where.status = 0;
-    }
-    if (String(s) === 'Active') {
-      preparedQuery.where.status = 1;
-    }
-
-    if (isLimitByRange) {
-      preparedQuery.where.createdAt = {};
-      preparedQuery.where.createdAt.$between = [];
-      preparedQuery.where.createdAt.$between.push(from);
-      preparedQuery.where.createdAt.$between.push(to);
-    }
-
-    const data = await db.category.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      masterData: req.body,
-    });
-  } catch (error) {
-    res.sendStatus(500);
-  }
-});
-
-router.post('/subcategory', async (req, res) => {
-  try {
-    const s = req.body.status;
-
-    const { isLimitByRange } = req.body;
-
-    const { from } = req.body;
-    const { to } = req.body;
-
-    const preparedQuery = {
+    const { startDate, endDate, bugStatus } = req.body;
+    const data = await db.bug.findAll({
       where: {
-        parentId: {
-          [Op.ne]: null,
-        },
+        createdAt: { [Op.between]: [startDate, endDate] },
+        status: { [Op.in]: bugStatus },
       },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+      // logging:console.log
+    });
+    console.log(data);
+    res.status(200).json(data);
+  } catch (error) {
+    res.sendStatus(500);
+  }
+});
+
+router.post("/devProgress", async (req, res) => {
+  try {
+    const {
+      startDate,
+      endDate,
+      devsList,
+      bugStatus,
+      environment,
+      severity,
+      componentType,
+    } = req.body;
+
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
+      },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
     };
-    preparedQuery.where = {};
-    if (s == 1) {
-      preparedQuery.where.status = 1;
-    }
-    if (s == 0) {
-      preparedQuery.where.status = 0;
-    }
 
-    if (isLimitByRange) {
-      preparedQuery.where.createdAt = {};
-      preparedQuery.where.createdAt.$between = [];
-      preparedQuery.where.createdAt.$between.push(from);
-      preparedQuery.where.createdAt.$between.push(to);
+    if (componentType === "developer") {
+      query.where.assignedTo = { [Op.in]: devsList };
+    } else {
+      query.where.assignee = { [Op.in]: devsList };
     }
 
-    const data = await db.category.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      masterData: req.body,
-    });
-  } catch (error) {
-    res.sendStatus(500);
-  }
-});
-
-router.post('/product', async (req, res) => {
-  try {
-    const s = req.body.status;
-
-    const { isLimitByRange } = req.body;
-
-    const { from } = req.body;
-    const { to } = req.body;
-
-    const preparedQuery = {};
-    preparedQuery.where = {};
-    if (Number(s) === 0) {
-      preparedQuery.where.status = 0;
-    }
-    if (Number(s) === 1) {
-      preparedQuery.where.status = 1;
-    }
-
-    if (isLimitByRange) {
-      preparedQuery.where.createdAt = {};
-      preparedQuery.where.createdAt.$between = [];
-      preparedQuery.where.createdAt.$between.push(from);
-      preparedQuery.where.createdAt.$between.push(to);
-    }
-
-    const data = await db.item.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      masterData: req.body,
-    });
-  } catch (error) {
-    res.sendStatus(500);
-  }
-});
-
-router.get('/stock', async (req, res) => {
-  try {
-    const query = `SELECT 
-    items.name,
-    SUM(Stocks.qty) AS qty,
-    categories.name AS category
-FROM
-    inventory.Stocks
-        INNER JOIN
-    items ON Stocks.item_id = items.id
-        INNER JOIN
-    categories ON items.categoryId = categories.id
-WHERE
-    qty > 0
-GROUP BY Stocks.item_id`;
-
-    const data = await db.sequelize.query(query, {
-      type: db.sequelize.QueryTypes.SELECT,
-    });
+    const data = await db.bug.findAll(query);
     res.status(200).json(data);
   } catch (error) {
     console.log(error);
@@ -140,35 +90,119 @@ GROUP BY Stocks.item_id`;
   }
 });
 
-router.post('/customer', async (req, res) => {
+router.post("/bugsByProject", async (req, res) => {
   try {
-    const s = req.body.status;
-    const meta = req.body;
-    const { order } = req.body;
-    const { type } = req.body;
-    const preparedQuery = {};
-    preparedQuery.where = {};
-    preparedQuery.type = type;
-    if (Number(s) === 1) {
-      preparedQuery.where.status = 1;
-    }
+    const { startDate, endDate, projectId, bugStatus, environment, severity } =
+      req.body;
 
-    if (Number(s) === 0) {
-      preparedQuery.where.status = 0;
-    }
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
 
-    preparedQuery.order = db.sequelize.literal(order);
-    const data = await db.customer.findAll(preparedQuery);
-    res.status(200).json({
-      data,
-      meta,
-    });
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
+      },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+          where: {
+            id: projectId,
+          },
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+    };
+
+    const data = await db.bug.findAll(query);
+    res.status(200).json(data);
   } catch (error) {
+    console.log(error);
     res.sendStatus(500);
   }
 });
 
-router.post('/user', async (req, res) => {
+router.post("/userReport", async (req, res) => {
+  try {
+    const { startDate, endDate, userRoles, userStatus } = req.body;
+
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+
+        status: { [Op.in]: userStatus },
+        role: { [Op.in]: userRoles },
+      },
+    };
+
+    const data = await db.User.findAll(query);
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
+router.post("/bugSummary", async (req, res) => {
+  try {
+    const {
+      startDate,
+      endDate,
+      roles,
+      projectId,
+      bugStatus,
+      environment,
+      severity,
+    } = req.body;
+
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
+      },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+          where: {
+            id: { [Op.in]: projectId },
+          },
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+    };
+
+    const data = await db.bug.findAll(query);
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
+router.post("/user", async (req, res) => {
   try {
     const { order, type, s } = req.body;
 
@@ -192,12 +226,12 @@ router.post('/user', async (req, res) => {
       meta,
     });
   } catch (error) {
-    console.log('ERR', error);
+    console.log("ERR", error);
     res.sendStatus(500);
   }
 });
 
-router.post('/sr', async (req, res) => {
+router.post("/sr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -235,7 +269,7 @@ router.post('/sr', async (req, res) => {
   }
 });
 
-router.post('/invoice', async (req, res) => {
+router.post("/invoice", async (req, res) => {
   try {
     const data = req.body;
 
@@ -268,7 +302,7 @@ router.post('/invoice', async (req, res) => {
   }
 });
 
-router.post('/pr', async (req, res) => {
+router.post("/pr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -306,7 +340,7 @@ router.post('/pr', async (req, res) => {
   }
 });
 
-router.post('/grn', async (req, res) => {
+router.post("/grn", async (req, res) => {
   try {
     const data = req.body;
 
@@ -344,7 +378,7 @@ async function todayTransactions(req, res, next) {
     const today_grn = await db.Grn_master.findAll({
       where: {
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
         //  db.Sequelize.fn('CURRENT_DATE')
       },
@@ -359,7 +393,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -373,7 +407,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -392,7 +426,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
