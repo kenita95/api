@@ -202,31 +202,44 @@ router.post("/bugSummary", async (req, res) => {
   }
 });
 
-router.post("/user", async (req, res) => {
+router.post("/bugsByProject2", async (req, res) => {
   try {
-    const { order, type, s } = req.body;
+    const { startDate, endDate, projectId, bugStatus, environment, severity } =
+      req.body;
 
-    const preparedQuery = {};
-    preparedQuery.where = {};
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
 
-    preparedQuery.type = type;
-    preparedQuery.order = db.sequelize.literal(order);
-    if (Number(s) === 1) {
-      preparedQuery.where.status = 1;
-    }
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
+      },
+      include: [
+        {
+          model: db.project,
+          attributes: ["title"],
+          where: {
+            id: projectId,
+          },
+        },
+        {
+          model: db.User,
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
+        },
+        {
+          model: db.User,
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+    };
 
-    if (Number(s) === 0) {
-      preparedQuery.where.status = 0;
-    }
-
-    const data = await db.User.findAll(preparedQuery);
-    const meta = req.body;
-    res.status(200).json({
-      data,
-      meta,
-    });
+    const data = await db.bug.findAll(query);
+    res.status(200).json(data);
   } catch (error) {
-    console.log("ERR", error);
+    console.log(error);
     res.sendStatus(500);
   }
 });
