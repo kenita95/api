@@ -1,11 +1,11 @@
-const moment = require("moment");
-const express = require("express");
-const db = require("../models");
+const moment = require('moment');
+const express = require('express');
+const db = require('../models');
 
 const router = express.Router();
 const { Op } = db.Sequelize;
 
-router.post("/bugStatus", async (req, res) => {
+router.post('/bugStatus', async (req, res) => {
   try {
     const { startDate, endDate, bugStatus } = req.body;
     const data = await db.bug.findAll({
@@ -16,17 +16,17 @@ router.post("/bugStatus", async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ["title"],
+          attributes: ['title'],
         },
         {
           model: db.User,
-          as: "assigneeId",
-          attributes: ["first_name", "last_name"],
+          as: 'assigneeId',
+          attributes: ['first_name', 'last_name'],
         },
         {
           model: db.User,
-          as: "assignedToId",
-          attributes: ["first_name", "last_name"],
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
         },
       ],
       // logging:console.log
@@ -38,18 +38,29 @@ router.post("/bugStatus", async (req, res) => {
   }
 });
 
-router.post("/devProgress", async (req, res) => {
+router.post('/devProgress', async (req, res) => {
   try {
     const {
       startDate,
       endDate,
       devsList,
-      bugStatus,
       environment,
       severity,
       componentType,
     } = req.body;
-
+    let { bugStatus } = req.body;
+    if (bugStatus[0] === 'All') {
+      bugStatus = [
+        'Canceled',
+        'Done',
+        'Re-opened',
+        'Testing',
+        'Ready for testing',
+        'Dev done',
+        'In-progress',
+        'Open',
+      ];
+    }
     const query = {
       where: {
         createdAt: { [Op.between]: [startDate, endDate] },
@@ -61,22 +72,22 @@ router.post("/devProgress", async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ["title"],
+          attributes: ['title'],
         },
         {
           model: db.User,
-          as: "assigneeId",
-          attributes: ["first_name", "last_name"],
+          as: 'assigneeId',
+          attributes: ['first_name', 'last_name'],
         },
         {
           model: db.User,
-          as: "assignedToId",
-          attributes: ["first_name", "last_name"],
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
         },
       ],
     };
 
-    if (componentType === "developer") {
+    if (componentType === 'developer') {
       query.where.assignedTo = { [Op.in]: devsList };
     } else {
       query.where.assignee = { [Op.in]: devsList };
@@ -90,7 +101,7 @@ router.post("/devProgress", async (req, res) => {
   }
 });
 
-router.post("/bugsByProject", async (req, res) => {
+router.post('/bugsByProject', async (req, res) => {
   try {
     const { startDate, endDate, projectId, bugStatus, environment, severity } =
       req.body;
@@ -106,20 +117,20 @@ router.post("/bugsByProject", async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ["title"],
+          attributes: ['title'],
           where: {
             id: projectId,
           },
         },
         {
           model: db.User,
-          as: "assigneeId",
-          attributes: ["first_name", "last_name"],
+          as: 'assigneeId',
+          attributes: ['first_name', 'last_name'],
         },
         {
           model: db.User,
-          as: "assignedToId",
-          attributes: ["first_name", "last_name"],
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
         },
       ],
     };
@@ -132,7 +143,7 @@ router.post("/bugsByProject", async (req, res) => {
   }
 });
 
-router.post("/userReport", async (req, res) => {
+router.post('/userReport', async (req, res) => {
   try {
     const { startDate, endDate, userRoles, userStatus } = req.body;
 
@@ -153,85 +164,27 @@ router.post("/userReport", async (req, res) => {
   }
 });
 
-router.post("/bugSummary", async (req, res) => {
-  try {
-    const {
-      startDate,
-      endDate,
-      roles,
-      projectId,
-      bugStatus,
-      environment,
-      severity,
-    } = req.body;
-
-    const query = {
-      where: {
-        createdAt: { [Op.between]: [startDate, endDate] },
-
-        status: { [Op.in]: bugStatus },
-        environment,
-        severity,
-      },
-      include: [
-        {
-          model: db.project,
-          attributes: ["title"],
-          where: {
-            id: { [Op.in]: projectId },
-          },
-        },
-        {
-          model: db.User,
-          as: "assigneeId",
-          attributes: ["first_name", "last_name"],
-        },
-        {
-          model: db.User,
-          as: "assignedToId",
-          attributes: ["first_name", "last_name"],
-        },
-      ],
-    };
-
-    const data = await db.bug.findAll(query);
-    res.status(200).json(data);
-  } catch (error) {
-    console.log(error);
-    res.sendStatus(500);
-  }
-});
-
-router.post("/bugsByProject2", async (req, res) => {
+router.post('/bugSummary', async (req, res) => {
   try {
     const { startDate, endDate, projectId, bugStatus, environment, severity } =
       req.body;
-
     const query = {
       where: {
         createdAt: { [Op.between]: [startDate, endDate] },
-
         status: { [Op.in]: bugStatus },
         environment,
         severity,
       },
       include: [
         {
-          model: db.project,
-          attributes: ["title"],
-          where: {
-            id: projectId,
-          },
+          model: db.User,
+          as: 'assigneeId',
+          attributes: ['first_name', 'last_name'],
         },
         {
           model: db.User,
-          as: "assigneeId",
-          attributes: ["first_name", "last_name"],
-        },
-        {
-          model: db.User,
-          as: "assignedToId",
-          attributes: ["first_name", "last_name"],
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
         },
       ],
     };
@@ -244,7 +197,54 @@ router.post("/bugsByProject2", async (req, res) => {
   }
 });
 
-router.post("/sr", async (req, res) => {
+router.post('/bugsByProject2', async (req, res) => {
+  try {
+    const { startDate, endDate, projectId, environment, severity } = req.body;
+    let { bugStatus } = req.body;
+
+    if (bugStatus[0] === 'All') {
+      bugStatus = [
+        'Canceled',
+        'Done',
+        'Re-opened',
+        'Testing',
+        'Ready for testing',
+        'Dev done',
+        'In-progress',
+        'Open',
+      ];
+    }
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+
+        status: { [Op.in]: bugStatus },
+        environment,
+        severity,
+      },
+      include: [
+        {
+          model: db.User,
+          as: 'assigneeId',
+          attributes: ['first_name', 'last_name'],
+        },
+        {
+          model: db.User,
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
+        },
+      ],
+    };
+
+    const data = await db.bug.findAll(query);
+    res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
+router.post('/sr', async (req, res) => {
   try {
     const data = req.body;
 
@@ -282,7 +282,7 @@ router.post("/sr", async (req, res) => {
   }
 });
 
-router.post("/invoice", async (req, res) => {
+router.post('/invoice', async (req, res) => {
   try {
     const data = req.body;
 
@@ -315,7 +315,7 @@ router.post("/invoice", async (req, res) => {
   }
 });
 
-router.post("/pr", async (req, res) => {
+router.post('/pr', async (req, res) => {
   try {
     const data = req.body;
 
@@ -353,7 +353,7 @@ router.post("/pr", async (req, res) => {
   }
 });
 
-router.post("/grn", async (req, res) => {
+router.post('/grn', async (req, res) => {
   try {
     const data = req.body;
 
@@ -391,7 +391,7 @@ async function todayTransactions(req, res, next) {
     const today_grn = await db.Grn_master.findAll({
       where: {
         createdAt: {
-          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
+          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
         },
         //  db.Sequelize.fn('CURRENT_DATE')
       },
@@ -406,7 +406,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
+          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
         },
       },
       include: [
@@ -420,7 +420,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
+          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
         },
       },
       include: [
@@ -439,7 +439,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
+          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
         },
       },
       include: [
@@ -464,5 +464,74 @@ async function todayTransactions(req, res, next) {
     res.sendStatus(500);
   }
 }
+
+const calculateProgress = (value) => {
+  let totalValue = 0;
+  if (value === 'Blocker') {
+    totalValue = 150;
+  }
+  if (value === 'Critical') {
+    totalValue = 125;
+  }
+  if (value === 'Major') {
+    totalValue = 100;
+  }
+  if (value === 'Minor') {
+    totalValue = 75;
+  }
+  if (value === 'Trivial') {
+    totalValue = 50;
+  }
+  if (value === 'Enhancement') {
+    totalValue = 25;
+  }
+  return totalValue;
+};
+
+router.post('/progressReport', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+
+    const query = {
+      where: {
+        createdAt: { [Op.between]: [startDate, endDate] },
+      },
+      include: [
+        {
+          model: db.User,
+          as: 'assignedToId',
+          attributes: ['first_name', 'last_name'],
+        },
+      ],
+    };
+    const data = await db.bug.findAll(query);
+    let arr = [];
+    data.forEach((item) => {
+      const value = calculateProgress(item.severity);
+      const id = item.assignedTo;
+      const a = 0;
+      const name = `${item.assignedToId.first_name} ${item.assignedToId.last_name}`;
+      const obj = { name, id, totalCredit: value, lengthCount: 1, avg: 0 };
+
+      arr.push(obj);
+    });
+    const results = [];
+    arr.forEach((item) => {
+      const isExists = results.findIndex((e) => e.id === item.id);
+      if (isExists >= 0) {
+        results[isExists].totalCredit += item.totalCredit;
+        results[isExists].lengthCount += 1;
+        results[isExists].avg =
+          results[isExists].totalCredit / results[isExists].lengthCount;
+      } else {
+        results.push(item);
+      }
+    });
+    res.status(200).json({ results });
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
 
 module.exports = router;
