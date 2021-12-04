@@ -204,7 +204,7 @@ router.post("/bugSummary", async (req, res) => {
 
 router.post("/bugsByProject2", async (req, res) => {
   try {
-    const { startDate, endDate, projectId, bugStatus, environment, severity } =
+    const { startDate, endDate, bugStatus, environment, severity } =
       req.body;
 
     const query = {
@@ -216,13 +216,13 @@ router.post("/bugsByProject2", async (req, res) => {
         severity,
       },
       include: [
-        {
-          model: db.project,
-          attributes: ["title"],
-          where: {
-            id: projectId,
-          },
-        },
+        // {
+        //   model: db.project,
+        //   attributes: ["title"],
+        //   where: {
+        //     id: projectId,
+        //   },
+        // },
         {
           model: db.User,
           as: "assigneeId",
