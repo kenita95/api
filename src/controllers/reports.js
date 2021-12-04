@@ -1,11 +1,11 @@
-const moment = require('moment');
-const express = require('express');
-const db = require('../models');
+const moment = require("moment");
+const express = require("express");
+const db = require("../models");
 
 const router = express.Router();
 const { Op } = db.Sequelize;
 
-router.post('/bugStatus', async (req, res) => {
+router.post("/bugStatus", async (req, res) => {
   try {
     const { startDate, endDate, bugStatus } = req.body;
     const data = await db.bug.findAll({
@@ -16,17 +16,17 @@ router.post('/bugStatus', async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ['title'],
+          attributes: ["title"],
         },
         {
           model: db.User,
-          as: 'assigneeId',
-          attributes: ['first_name', 'last_name'],
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
         },
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
       // logging:console.log
@@ -38,7 +38,7 @@ router.post('/bugStatus', async (req, res) => {
   }
 });
 
-router.post('/devProgress', async (req, res) => {
+router.post("/devProgress", async (req, res) => {
   try {
     const {
       startDate,
@@ -49,16 +49,16 @@ router.post('/devProgress', async (req, res) => {
       componentType,
     } = req.body;
     let { bugStatus } = req.body;
-    if (bugStatus[0] === 'All') {
+    if (bugStatus[0] === "All") {
       bugStatus = [
-        'Canceled',
-        'Done',
-        'Re-opened',
-        'Testing',
-        'Ready for testing',
-        'Dev done',
-        'In-progress',
-        'Open',
+        "Canceled",
+        "Done",
+        "Re-opened",
+        "Testing",
+        "Ready for testing",
+        "Dev done",
+        "In-progress",
+        "Open",
       ];
     }
     const query = {
@@ -72,22 +72,22 @@ router.post('/devProgress', async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ['title'],
+          attributes: ["title"],
         },
         {
           model: db.User,
-          as: 'assigneeId',
-          attributes: ['first_name', 'last_name'],
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
         },
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
     };
 
-    if (componentType === 'developer') {
+    if (componentType === "developer") {
       query.where.assignedTo = { [Op.in]: devsList };
     } else {
       query.where.assignee = { [Op.in]: devsList };
@@ -101,7 +101,7 @@ router.post('/devProgress', async (req, res) => {
   }
 });
 
-router.post('/bugsByProject', async (req, res) => {
+router.post("/bugsByProject", async (req, res) => {
   try {
     const { startDate, endDate, projectId, bugStatus, environment, severity } =
       req.body;
@@ -117,20 +117,20 @@ router.post('/bugsByProject', async (req, res) => {
       include: [
         {
           model: db.project,
-          attributes: ['title'],
+          attributes: ["title"],
           where: {
             id: projectId,
           },
         },
         {
           model: db.User,
-          as: 'assigneeId',
-          attributes: ['first_name', 'last_name'],
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
         },
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
     };
@@ -143,7 +143,7 @@ router.post('/bugsByProject', async (req, res) => {
   }
 });
 
-router.post('/userReport', async (req, res) => {
+router.post("/userReport", async (req, res) => {
   try {
     const { startDate, endDate, userRoles, userStatus } = req.body;
 
@@ -164,27 +164,40 @@ router.post('/userReport', async (req, res) => {
   }
 });
 
-router.post('/bugSummary', async (req, res) => {
+router.post("/bugSummary", async (req, res) => {
   try {
-    const { startDate, endDate, projectId, bugStatus, environment, severity } =
-      req.body;
+    // qaList:this.qaList,
+    // devsList:this.devsList
+    const {
+      startDate,
+      endDate,
+      projectId,
+      bugStatus,
+      environment,
+      severity,
+      qaList,
+      devsList,
+    } = req.body;
     const query = {
       where: {
         createdAt: { [Op.between]: [startDate, endDate] },
         status: { [Op.in]: bugStatus },
         environment,
         severity,
+        projectId,
+        assignedTo: { [Op.in]: devsList },
+        assignee: { [Op.in]: qaList },
       },
       include: [
         {
           model: db.User,
-          as: 'assigneeId',
-          attributes: ['first_name', 'last_name'],
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
         },
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
     };
@@ -197,21 +210,21 @@ router.post('/bugSummary', async (req, res) => {
   }
 });
 
-router.post('/bugsByProject2', async (req, res) => {
+router.post("/bugsByProject2", async (req, res) => {
   try {
     const { startDate, endDate, projectId, environment, severity } = req.body;
     let { bugStatus } = req.body;
 
-    if (bugStatus[0] === 'All') {
+    if (bugStatus[0] === "All") {
       bugStatus = [
-        'Canceled',
-        'Done',
-        'Re-opened',
-        'Testing',
-        'Ready for testing',
-        'Dev done',
-        'In-progress',
-        'Open',
+        "Canceled",
+        "Done",
+        "Re-opened",
+        "Testing",
+        "Ready for testing",
+        "Dev done",
+        "In-progress",
+        "Open",
       ];
     }
     const query = {
@@ -225,13 +238,13 @@ router.post('/bugsByProject2', async (req, res) => {
       include: [
         {
           model: db.User,
-          as: 'assigneeId',
-          attributes: ['first_name', 'last_name'],
+          as: "assigneeId",
+          attributes: ["first_name", "last_name"],
         },
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
     };
@@ -244,7 +257,7 @@ router.post('/bugsByProject2', async (req, res) => {
   }
 });
 
-router.post('/sr', async (req, res) => {
+router.post("/sr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -282,7 +295,7 @@ router.post('/sr', async (req, res) => {
   }
 });
 
-router.post('/invoice', async (req, res) => {
+router.post("/invoice", async (req, res) => {
   try {
     const data = req.body;
 
@@ -315,7 +328,7 @@ router.post('/invoice', async (req, res) => {
   }
 });
 
-router.post('/pr', async (req, res) => {
+router.post("/pr", async (req, res) => {
   try {
     const data = req.body;
 
@@ -353,7 +366,7 @@ router.post('/pr', async (req, res) => {
   }
 });
 
-router.post('/grn', async (req, res) => {
+router.post("/grn", async (req, res) => {
   try {
     const data = req.body;
 
@@ -391,7 +404,7 @@ async function todayTransactions(req, res, next) {
     const today_grn = await db.Grn_master.findAll({
       where: {
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
         //  db.Sequelize.fn('CURRENT_DATE')
       },
@@ -406,7 +419,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -420,7 +433,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -439,7 +452,7 @@ async function todayTransactions(req, res, next) {
       where: {
         // createdAt: db.Sequelize.fn('CURRENT_DATE')
         createdAt: {
-          [Op.gte]: db.Sequelize.fn('CURRENT_DATE'),
+          [Op.gte]: db.Sequelize.fn("CURRENT_DATE"),
         },
       },
       include: [
@@ -467,28 +480,28 @@ async function todayTransactions(req, res, next) {
 
 const calculateProgress = (value) => {
   let totalValue = 0;
-  if (value === 'Blocker') {
+  if (value === "Blocker") {
     totalValue = 150;
   }
-  if (value === 'Critical') {
+  if (value === "Critical") {
     totalValue = 125;
   }
-  if (value === 'Major') {
+  if (value === "Major") {
     totalValue = 100;
   }
-  if (value === 'Minor') {
+  if (value === "Minor") {
     totalValue = 75;
   }
-  if (value === 'Trivial') {
+  if (value === "Trivial") {
     totalValue = 50;
   }
-  if (value === 'Enhancement') {
+  if (value === "Enhancement") {
     totalValue = 25;
   }
   return totalValue;
 };
 
-router.post('/progressReport', async (req, res) => {
+router.post("/progressReport", async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
 
@@ -499,8 +512,8 @@ router.post('/progressReport', async (req, res) => {
       include: [
         {
           model: db.User,
-          as: 'assignedToId',
-          attributes: ['first_name', 'last_name'],
+          as: "assignedToId",
+          attributes: ["first_name", "last_name"],
         },
       ],
     };

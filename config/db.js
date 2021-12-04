@@ -2,7 +2,7 @@ module.exports = {
   development: {
     username: "root",
     password: "93282",
-    database: "pms",
+    database: "bugs_manager",
     host: "127.0.0.1",
     dialect: "mysql",
     operatorsAliases: "0",
